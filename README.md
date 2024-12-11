@@ -263,5 +263,363 @@ echo "I'm done if \$path is set."
   + Định nghĩa các hàm shell
   + Thay đổi Prompt (PS1)
   + Tự động thực thi lệnh khi shell khởi động
+# Thực thi điều kiện (Ra quyết định)\
+- In shell:
+  + 0 là giá false.
+  + 1 or non-zero là giá trị true.
+- Lệnh "test" được sử dụng để kiểm tra các loại tệp và so sánh các giá trị. Test được sử dụng trong thực thi có điều kiện. Nó được sử dụng cho:
+   + So sánh thuộc tính tệp
+   + Thực hiện so sánh chuỗi.
+   + So sánh số học cơ bản.
+- ví dụ :
+```
+test -f /etc/resolv.conf && echo "File /etc/resolv.conf found." || echo "File /etc/resolv.conf not found."
+- f : option tìm file
+```
+- nếu lệnh test tìm thấy file trả về File /etc/resolv.conf found
+- nếu lệnh test không tìm thấy file trả về File /etc/resolv.conf not found
+- **if cấu trúc thực thi mã dựa trên điều kiện**
+- cấu trúc :
+```
+if condition
+then
+     command1 
+     command2
+     ...
+     commandN 
+fi
+- condition là điều kiện thực thi
+```
+- hoặc
+```
+if test var == value
+then
+     command1 
+     command2
+     ...
+     commandN 
+fi
+```
+- hoặc
+```
+if test -f /file/exists
+then
+     command1 
+     command2
+     ...
+     commandN 
+fi
+```
+- hoặc
+```
+ if [ condition ]
+then
+      command1
+      command2
+      ....
+      ..
+fi
+```
+- ví dụ
+```
+read -p "Enter a password" pass
+if test "$pass" == "jerry"
+then
+     echo "Password verified."
+fi
+
+#!/bin/bash
+read -p "Enter # 5 : " number
+if test $number == 5 
+then
+    echo "Thanks for entering # 5"
+fi
+if test $number != 5 
+then
+    echo "I told you to enter # 5. Please try again."
+fi
+```
+- if..else..fi cho phép đưa ra lựa chọn dựa trên sự thành công hay thất bại của lệnh.
+- cấu trúc :
+```
+ if command
+           then
+                       command executed successfully
+                       execute all commands up to else statement
+                       or to fi if there is no else statement
+
+           else
+                       command failed so
+                       execute all commands up to fi
+           fi
+```
+```
+ if test var -eq val
+           then
+                       command executed successfully
+                       execute all commands up to else statement
+                       or to fi if there is no else statement
+
+           else
+                       if command failed then
+                       execute all commands up to fi
+           fi
+```
+```
+ if [ condition ]
+           then
+                       if given condition true
+                       execute all commands up to else statement
+                       or to fi if there is no else statement
+
+           else
+                       if given condition false 
+                       execute all commands up to fi
+           fi
+```
+- ví dụ
+```
+##!/bin/bash
+read -p "Enter a password" pass
+if test "$pass" = "jerry"
+then
+     echo "Password verified."
+else
+     echo "Access denied."	
+fi
+```
+```
+#!/bin/bash
+# Purpose: Detecting Hardware Errors
+# Author: Vivek Gite <vivek@nixcraft.com>
+# Note : The script must run as a cron-job.
+# Last updated on : 28-Aug-2007
+# -----------------------------------------------
+
+# Store path to commands
+LOGGER=/usr/bin/logger
+FILE=/var/log/mcelog
+
+# Store email settings
+AEMAIL="vivek@nixcraft.net.in"
+ASUB="H/W Error - $(hostname)"
+AMESS="Warning - Hardware errors found on $(hostname) @ $(date). See log file for the details /var/log/mcelog."
+OK_MESS="OK: NO Hardware Error Found."
+WARN_MESS="ERROR: Hardware Error Found."
 
 
+# Check if $FILE exists or not
+if test ! -f "$FILE" 
+then   
+	echo "Error - $FILE not found or mcelog is not configured for 64 bit Linux systems."
+	exit 1
+fi
+
+# okay search for errors in file
+error_log=$(grep -c -i "hardware error" $FILE)
+
+# error found or not?
+if [ $error_log -gt 0 ]
+then    # yes error(s) found, let send an email
+	echo "$AMESS" | email -s "$ASUB" $AEMAIL
+else    # naa, everything looks okay
+	echo "$OK_MESS"
+fi
+```
+- **if lồng nhau**
+- cấu trúc :
+```
+	if condition
+	then
+		if condition
+		then
+			.....
+			..
+			do this
+		else
+			....
+			..
+			do this
+		fi
+	else
+		...
+		.....
+		do this
+	fi
+```
+- if..elif..else..fi cho phép tập lệnh có nhiều khả năng và điều kiện khác nhau
+- ví dụ :
+```
+read -p "Enter a number : " n
+if [ $n -gt 0 ]; then
+  echo "$n is a positive."
+elif [ $n -lt 0 ]
+then
+  echo "$n is a negative."
+elif [ $n -eq 0 ]
+then
+  echo "$n is zero number."
+else
+  echo "Oops! $n is not a number."
+fi
+```
+- **Trạng thái thoát của một lệnh**
+- Mỗi lệnh Linux trả về một trạng thái khi nó kết thúc bình thường hoặc bất thường. Bạn có thể sử dụng giá trị của trạng thái thoát trong tập lệnh shell để hiển thị thông báo lỗi hoặc thực hiện một số hành động. Ví dụ, nếu lệnh tar không thành công, nó trả về một mã lệnh yêu cầu tập lệnh shell gửi email đến sysadmin.
+- Bạn có thể sử dụng biến shell đặc biệt có tên là $? để lấy trạng thái thoát của lệnh đã thực thi trước đó. Để in biến $?, hãy sử dụng lệnh echo: echo $?
+- nếu echo $? trả về 0 - lệnh đúng
+- nếu echo $? trả về giá trị từ 1-255-lệnh sai
+- ví dụ :
+```
+#!/bin/bash
+# set var 
+PASSWD_FILE=/etc/passwd
+
+# get user name
+read -p "Enter a user name : " username
+
+# try to locate username in in /etc/passwd
+grep "^$username" $PASSWD_FILE > /dev/null
+
+# store exit status of grep
+# if found grep will return 0 exit stauts
+# if not found, grep will return a nonzero exit stauts
+status=$?
+
+if test $status -eq 0
+then
+	echo "User '$username' found in $PASSWD_FILE file."
+else
+	echo "User '$username' not found in $PASSWD_FILE file."
+fi
+```
+- **Thực hiện có điều kiện**
+- dựa vào trạng thái thoát có thể thực hiện các câu lệnh có điều kiện
+- Logic AND && - Chỉ chạy lệnh thứ hai nếu lệnh đầu tiên thành công.
+- Logic OR || - Chỉ chạy lệnh thứ hai nếu lệnh đầu tiên không thành công.
+- ví dụ :
+```
+grep "^vivek" /etc/passwd && echo "Vivek found in /etc/passwd"
+tìm vivek trong /etc/passwd nếu có ( lệnh thành công Logic AND && ) in ra 
+grep "^vivek" /etc/passwd || echo "User vivek not found in /etc/passwd"
+tìm vivek trong /etc/passwd nếu có in thì ko in ra nếu ko có ( lệnh ko thành công Logic OR || ) mới in ra
+```
+- logic not (!) là toán tử boolean
+- Phủ định trạng thái của lệnh
+- Trong Bash, các lệnh thường trả về:
+    + 0: Thành công (true).
+    + Khác 0: Thất bại (false).
+    + ! sẽ đổi trạng thái:
+    + Nếu lệnh trả về 0, ! sẽ làm cho nó thành false.
+    + Nếu lệnh trả về khác 0, ! sẽ làm cho nó thành true.
+- sử dụng lệnh test bằng ngoặc
+```
+[ condition ] && true-command || false-command
+```
+- các toàn từ so sánh xem [tại đây](https://bash.cyberciti.biz/guide/Numeric_comparison)
+- so sánh chuỗi
+```
+STRING1 = STRING2 - là 
+STRING1 != STRING2 -khác
+```
+- các option so sánh với tệp tin và thư mục xem [tại đây](https://bash.cyberciti.biz/guide/File_attributes_comparisons)
+
+- **Cách sử dụng tham số vị trí**
+- ham số vị trí (Positional Parameters) trong Bash là các tham số hoặc đối số được truyền cho một script hoặc hàm khi nó được gọi. Chúng được tham chiếu bằng các ký hiệu đặc biệt như $1, $2, $3,... tương ứng với thứ tự của đối số.
+- $@ mở rộng thành "$1" "$2" "$3" ... "$n"
+- $* mở rộng thành "$1y$2y$3y...$n",
+- ví dụ :
+```
+my_function() {
+    echo "First argument: $1"
+    echo "Second argument: $2"
+}
+
+my_function argA argB
+$1: argA
+$2: argB
+```
+- các tham số được thiết lập bởi shell :
+- |Tham số|	Ý nghĩa|
+  |:-------|---------------------------------:|
+  |$0|	Tên của script hoặc chương trình đang chạy (bao gồm đường dẫn nếu có).|
+  |$1, $2, ...|	Các tham số truyền cho script hoặc hàm, bắt đầu từ tham số thứ nhất.|
+  |$#|	Số lượng tham số được truyền.|
+  |$*|Chuỗi chứa tất cả các tham số, được ngăn cách bởi dấu cách.|
+  |"$@"|	Tương tự $*, nhưng giữ nguyên dấu ngoặc kép của từng tham số nếu chúng có.|
+  |$?|Mã trạng thái thoát (exit code) của lệnh hoặc script trước đó.|
+  |$$|PID (Process ID) của script hoặc shell đang chạy.|
+  |$!|	PID của tiến trình cuối cùng được chạy trong nền.|
+
+- **sử dụng exit command**
+- sử dụng exit command để phát hiện lỗi và chỉ định script thành công
+- ví dụ
+```
+#!/bin/bash
+
+LOG_FILE="/var/log/script_errors.log"
+
+echo "Bắt đầu kiểm tra file..."
+
+if [ ! -f "/path/to/file" ]; then
+    echo "$(date) - Lỗi: File không tồn tại!" >> "$LOG_FILE"
+    exit 1
+fi
+
+echo "Kiểm tra thư mục..."
+
+if [ ! -d "/path/to/directory" ]; then
+    echo "$(date) - Lỗi: Thư mục không tồn tại!" >> "$LOG_FILE"
+    exit 2
+fi
+
+echo "Mọi thứ đều ổn!"
+exit 0
+```
+- đặt các exit với mã khác 0 để nếu có sảy ra lỗi trong script sẽ biết lỗi ở đâu, nếu có lỗi ở đâu script sẽ dừng và trả về mã lỗi exit đã set ( exit 1-255)
+- và đặt exit 0 ở cuối script để thông báo script thành công mà không có lỗi
+
+**câu lệnh case**
+- Câu lệnh case trong Bash là một công cụ mạnh mẽ để thực hiện so sánh và xử lý các trường hợp khác nhau một cách hiệu quả, đặc biệt khi bạn muốn kiểm tra một biến hoặc giá trị với nhiều khả năng khác nhau. Câu lệnh này hoạt động tương tự như một chuỗi các câu lệnh if lồng nhau nhưng dễ đọc và bảo trì hơn.\
+- cấu trúc :
+```
+case <biến hoặc biểu thức> in
+    <mẫu 1>)
+        # Thực hiện hành động nếu khớp với mẫu 1
+        ;;
+    <mẫu 2>)
+        # Thực hiện hành động nếu khớp với mẫu 2
+        ;;
+    <mẫu 3>)
+        # Thực hiện hành động nếu khớp với mẫu 3
+        ;;
+    *)
+        # Thực hiện hành động nếu không có mẫu nào khớp (tùy chọn)
+        ;;
+esac
+```
+  + <biến hoặc biểu thức>: Biến hoặc biểu thức bạn muốn so sánh.
+  + <mẫu n>: Các mẫu (pattern) mà bạn muốn so sánh với giá trị của biến hoặc biểu thức.
+  + ;;: Dùng để kết thúc mỗi khối mã lệnh của mỗi trường hợp.
+  + *: Là ký tự đại diện cho tất cả các trường hợp không khớp với mẫu nào, tương tự như "else" trong câu lệnh if.
+- ví dụ :
+```
+#!/bin/bash
+
+echo "Nhập một số từ 1 đến 3:"
+read num
+
+case $num in
+  1)
+    echo "Bạn đã chọn số 1"
+    ;;
+  2)
+    echo "Bạn đã chọn số 2"
+    ;;
+  3)
+    echo "Bạn đã chọn số 3"
+    ;;
+  *)
+    echo "Lựa chọn không hợp lệ"
+    ;;
+esac
+```
