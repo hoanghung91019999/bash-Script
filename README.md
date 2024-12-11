@@ -623,3 +623,142 @@ case $num in
     ;;
 esac
 ```
+# chapter 5 : vòng lặp Bash loops
+- Bash loops (vòng lặp trong Bash) cho phép bạn thực hiện một chuỗi lệnh nhiều lần. Có ba loại vòng lặp chính trong Bash: for, while, và until. Mỗi loại vòng lặp có cách sử dụng và mục đích khác nhau, giúp bạn linh hoạt trong việc xử lý các tác vụ lập trình.
+
+###  Vòng lặp for
+- Vòng lặp for trong Bash được sử dụng để lặp qua một tập hợp giá trị hoặc một phạm vi. Bạn có thể sử dụng for để lặp qua các phần tử trong một danh sách hoặc lặp qua một phạm vi số.
+- lặp giá trị sau đó truyền vào biến rùi in ra biến
+- ví dụ :
+```
+#!/bin/bash
+n=$1
+# make sure command line arguments are passed to the script
+if [ $# -eq 0 ]
+then
+	echo "A shell script to print multiplication table."
+	echo "Usage : $0 number"
+	exit 1
+fi
+
+# Use for loop
+for i in {1..10} 
+do
+	echo "$n * $i = $(( $i * $n))"
+done
+```
+- output
+```
+chạy script : ./multiplication.sh 13
+
+13 * 1 = 13
+13 * 2 = 26
+13 * 3 = 39
+13 * 4 = 52
+13 * 5 = 65
+13 * 6 = 78
+13 * 7 = 91
+13 * 8 = 104
+13 * 9 = 117
+13 * 10 = 130
+```
+- for trong for
+```
+#!/bin/bash
+# A shell script to print each number five times.
+for (( i = 1; i <= 5; i++ ))      ### Outer for loop ###
+do
+
+    for (( j = 1 ; j <= 5; j++ )) ### Inner for loop ###
+    do
+          echo -n "$i "
+    done
+
+  echo "" #### print the new line ###
+done
+```
+- giải thích :
+  	+ giá trị i = 1 lặp cho tới khi  i nhở hơn hoặc bằng 5 lớn hơn 5 kết thúc
+  	+ mỗi lần i lặp vòng lặp for bên trong kích hoạt và lặp giá trị j tương tự giá trị i nhưng ko echo ra j mà echo ra i
+  	+ j lặp 5 lần in ra i 5 lân
+  	+ mỗi lần i lặp sẽ kích hoạt j lặp khi j lặp hết mới tiếp tục lặp j
+- **While**
+- Vòng lặp while thực thi các lệnh trong khối do khi điều kiện là đúng (true). Vòng lặp này kiểm tra điều kiện trước khi thực thi các lệnh bên trong.
+- ví dụ :
+```
+#!/bin/bash
+count=1
+while [ $count -le 5 ]
+do
+  echo "Số là: $count"
+  ((count++))  # Tăng giá trị biến count
+done
+```
+- **Vòng lặp until**
+- Vòng lặp until là ngược lại với vòng lặp while. Vòng lặp until sẽ tiếp tục thực thi các lệnh trong khối do cho đến khi điều kiện trở thành đúng (true). Vòng lặp này kiểm tra điều kiện sau mỗi lần lặp.
+- ví dụ :
+```
+#!/bin/bash
+count=1
+until [ $count -gt 5 ]
+do
+  echo "Số là: $count"
+  ((count++))  # Tăng giá trị biến count
+done
+```
+- **Sử dụng break và continue trong vòng lặp**
+- break: Dùng để thoát khỏi vòng lặp hiện tại ngay lập tức.
+- continue: Dùng để bỏ qua phần còn lại của vòng lặp và tiếp tục với lần lặp tiếp theo.
+- ví dụ :
+```
+#!/bin/bash
+for i in {1..10}
+do
+  if [ $i -eq 5 ]
+  then
+    echo "Đã gặp số 5, thoát khỏi vòng lặp"
+    break
+  fi
+  echo "Số là: $i"
+done
+```
+- **vòng lặp select**
+- Trong Bash, vòng lặp select là một công cụ rất hữu ích để tạo các menu cho người dùng lựa chọn từ một danh sách các tùy chọn. Nó cho phép người dùng chọn một giá trị từ một tập hợp các tùy chọn đã cho, sau đó thực hiện hành động tương ứng với sự lựa chọn đó.
+- cấu trúc :
+```
+select var in list
+do
+    command(s)
+done
+```
+-  ví dụ
+```
+#!/bin/bash
+
+PS3="Please select an option: "   # Tùy chỉnh thông báo hướng dẫn cho người dùng.
+
+select option in "Option 1" "Option 2" "Option 3" "Exit"
+do
+    case $option in
+        "Option 1")
+            echo "You selected Option 1"
+            ;;
+        "Option 2")
+            echo "You selected Option 2"
+            ;;
+        "Option 3")
+            echo "You selected Option 3"
+            ;;
+        "Exit")
+            echo "Exiting the script"
+            break  # Dừng vòng lặp
+            ;;
+        *)
+            echo "Invalid option, please select again."
+            ;;
+    esac
+done
+```
+#chapter 5
+
+
