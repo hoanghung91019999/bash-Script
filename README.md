@@ -759,6 +759,212 @@ do
     esac
 done
 ```
-#chapter 5
+# chapter 6 Shell Redirection
+- Shell Redirection là một tính năng mạnh mẽ trong các shell của hệ điều hành Unix/Linux. Nó cho phép bạn kiểm soát cách dữ liệu được gửi vào hoặc ra khỏi chương trình, file, hoặc thiết bị. Shell redirection đặc biệt hữu ích khi bạn muốn lưu đầu ra, xử lý dữ liệu, hoặc tương tác với file mà không cần giao tiếp trực tiếp qua giao diện.
+   + 0 - Đầu vào - Bàn phím (stdin)
+   + 1 - Đầu ra - Màn hình (stdout)
+   + 2 - Lỗi - Màn hình (stderr)
+- Ba số trên là số POSIX chuẩn và còn được gọi là mô tả tệp (FD). Mỗi lệnh Linux ít nhất mở các luồng trên để giao tiếp với người dùng hoặc các chương trình hệ thống khác.
+- **input**
+-  cấu trúc :
+```
+ command < filename
+```
+- Còn được gọi là stdin.
+- Đầu vào chuẩn mặc định là bàn phím.
+- < là ký hiệu chuyển hướng đầu vào và cú pháp là
+![image](https://github.com/user-attachments/assets/6e34857b-ad46-4372-9773-be5564c74af4)
+
+- **output**
+- Ghi dữ liệu đầu ra của một chương trình vào file thay vì hiển thị trên màn hình (stdout).
+- cấu trúc
+```
+command > output.file.name
+- ghi đè
+echo "Hello Again" >> output.txt
+- ghi thêm vào cuối dòng
+```
+- **error**
+- Chuyển đầu ra lỗi (stderr) vào một file hoặc thiết bị.
+- cấu trúc :
+```
+command 2> errors.txt
+command 2>> errors.txt
+```
+
+- **tạo file trống**
+- cấu trúc :
+```
+> filename
+```
+- **/dev/null loại bỏ đầu ra không mong muốn**
+- /dev/null là một thiết bị đặc biệt trong hệ điều hành Unix/Linux. Nó hoạt động như một "hố đen", nơi mọi dữ liệu gửi vào đều bị loại bỏ mà không để lại dấu vết. Điều này rất hữu ích khi bạn muốn loại bỏ đầu ra không mong muốn từ các lệnh hoặc chương trình.
+- cấu trúc :
+```
+command > /dev/null
+```
+- Loại bỏ lỗi chuẩn (Standard Error - stderr)
+```
+command 2> /dev/null
+```
+- Loại bỏ cả đầu ra chuẩn và lỗi chuẩn
+```
+command > /dev/null 2>&1
+hoặc
+command &> /dev/null
+```
+- **here document**
+- Here Document (Heredoc) là một phương pháp trong shell scripting của Unix/Linux để truyền nhiều dòng văn bản làm đầu vào cho một lệnh hoặc chương trình. Đây là cách thay thế hiệu quả cho việc nhập liệu trực tiếp hoặc sử dụng file tạm.
+- chủ yếu dùng EOF
+- cấu trúc :
+```
+command <<EOF
+nội_dung
+EOF
+```
+- ví dụ
+```
+cat <<EOF > config.conf
+[server]
+address=127.0.0.1
+port=8080
+EOF
+```
+ **Here Strings**
+- Here Strings là một tính năng trong shell (ví dụ: Bash) dùng để cung cấp một chuỗi văn bản ngắn gọn làm đầu vào cho một lệnh. Đây là một cách thay thế ngắn gọn hơn so với Here Document khi bạn chỉ cần truyền một dòng văn bản.
+- cấu trúc :
+```
+command <<< "chuỗi_văn_bản"
+ vd : cat <<< "Hello, World!"
+ - đọc dữ liệu đầu vào và in ra màn hình
+```
+- **Bạn có thể gán mô tả tệp cho tệp đầu ra bằng cú pháp sau:**
+```
+exec fd> output.txt
+where, fd >= 3
+```
+- ví dụ
+```
+#!/bin/bash
+# Let us assign the file descriptor to file for output
+# fd # 3 is output file 
+exec 3> /tmp/output.txt 
+
+# Executes echo commands and  # Send output to 
+# the file descriptor (fd) # 3 i.e. write output to /tmp/output.txt
+echo "This is a test" >&3
+
+# Write date command output to fd # 3
+date >&3
+
+# Close fd # 3
+exec 3<&-
+```
+- **Bash hỗ trợ cú pháp sau để mở tệp để đọc và ghi vào mô tả tệp:**
+- cấu trúc
+```
+exec fd<>fileName
+```
+- giải thích
+   + exec fd< filename : mở file ở chế độ đọc
+   + exec fd> filename : mở file ở chế độ ghi
+   + exec fd<>fileName : mở file ở chế độ đọc và ghi
+- ví dụ
+```
+#!/bin/bash
+FILENAME="/tmp/out.txt"
+# Opening file descriptors # 3 for reading and writing
+# i.e. /tmp/out.txt
+exec 3<>$FILENAME
+
+# Write to file
+echo "Today is $(date)" >&3
+echo "Fear is the path to the dark side. Fear leads to anger. " >&3
+echo "Anger leads to hate. Hate leads to suffering." >&3
+echo "--- Yoda" >&3
+
+# close fd # 3
+exec 3>&-
+```
+- **read -u**
+- Sử dụng read -u cho phép bạn đọc dữ liệu từ một file descriptor (FD) tùy chỉnh thay vì từ stdin. Điều này rất hữu ích khi bạn cần đọc từ các file hoặc các luồng dữ liệu khác ngoài bàn phím hoặc đầu vào mặc định.
+- cấu trúc :
+```
+read -u fd var1 var2 ... varN
+```
+- ví dụ
+```
+#!/bin/bash
+# mở file gán fd là 3 và ở chế độ đọc
+exec 3< /etc/resolv.conf
+
+# mở file gán fd là 4 và ở chế độ ghi
+exec 4> /tmp/output.txt
+ 
+# lấy dữ liệu từ file 3 và gán lần lượt vào biến a b
+read -u 3 a b
+
+# Display data on screen
+echo "Data read from fd # 3:"
+echo $a $b
+
+# Write the same data to fd # 4 i.e. our output file
+echo "Writing data read from fd #3 to fd#4 ... "
+echo  "Field #1 - $a " >&4
+echo  "Field #2 - $b " >&4
+
+# Close fd # 3 and # 4
+exec 3<&-
+exec 4<&-
+```
+
+# chappter 7 Pipes and Filters
+- Trong lập trình shell, pipes và filters là hai khái niệm cơ bản giúp kết nối các lệnh với nhau, cho phép bạn xử lý dữ liệu theo chuỗi mà không cần phải lưu trữ dữ liệu tạm thời vào file. Đây là cách tiếp cận liên kết lệnh (command chaining) mạnh mẽ trong môi trường shell.
+- **Pipes**
+- Pipes trong shell được sử dụng để chuyển dữ liệu từ lệnh này sang lệnh khác. Dữ liệu được chuyển qua pipe giữa các lệnh dưới dạng dòng (stream) mà không cần phải lưu vào tệp.
+- cú pháp ::
+```
+command1 | command2
+- command1: Lệnh đầu tiên, xuất ra dữ liệu (stdout).
+- command2: Lệnh thứ hai, nhận dữ liệu từ stdin của lệnh đầu tiên.
+```
+- **Filters**
+- Filters là các lệnh hoặc chương trình trong shell mà có chức năng xử lý, chuyển đổi hoặc lọc dữ liệu đầu vào và xuất ra kết quả đã được xử lý. Filters thường làm việc với dữ liệu từ stdin và gửi kết quả ra stdout. Các lệnh phổ biến dùng làm filters bao gồm grep, awk, sed, sort, cut, v.v.
+- các lệnh phổ biến dùng làm Filters
+  + grep: Tìm kiếm chuỗi trong dữ liệu.
+  + awk: Xử lý và phân tích dữ liệu văn bản theo cột.
+  + sed: Thực hiện thay thế hoặc chỉnh sửa văn bản.
+  + sort: Sắp xếp dữ liệu.
+  + cut: Cắt bỏ hoặc lựa chọn cột từ dữ liệu.
+
+- **Sử dụng Pipes với Multiple Commands**
+- Bạn có thể kết hợp nhiều lệnh với nhau qua các pipe để tạo thành một chuỗi xử lý dữ liệu phức tạp hơn.
+- ví dụ :
+```
+cat file.txt | grep "pattern" | sort | uniq
+```
+- Pipe cho stderr (2>&1): Dùng để kết hợp đầu ra lỗi (stderr) với đầu ra chuẩn (stdout).
+	+ Ví dụ: command 2>&1 | another_command
+```
+ls /nonexistent_directory 2>&1 | grep "No such file or directory"
+2>&1: Chuyển hướng stderr (thông báo lỗi) sang stdout, để thông báo lỗi này có thể được đưa vào pipe
+| grep "No such file or directory": Dùng grep để lọc và chỉ in ra thông báo lỗi chứa chuỗi "No such file or directory"
+```
+- Pipe với process substitution (<(command) hoặc >(command)): Cho phép truyền dữ liệu từ một lệnh như một tệp tạm thời vào lệnh khác.
+  	+ <(command): Cho phép bạn chuyển đầu ra của một lệnh thành một "tệp" ảo mà các lệnh khác có thể đọc.
+	+ >(command): Cho phép bạn chuyển đầu ra của một lệnh vào một "tệp" ảo mà các lệnh khác có thể ghi vào.
+	+ Ví dụ: diff <(command1) <(command2)
+```
+diff <(echo "apple") <(echo "orange")
+<(echo "apple"): Tạo một tệp ảo chứa đầu ra của lệnh echo "apple".
+<(echo "orange"): Tạo một tệp ảo chứa đầu ra của lệnh echo "orange".
+diff: So sánh hai tệp ảo này và in ra sự khác biệt.
+```
+- ví dụ trong thực tế :
+```
+
+Tìm kiếm các dòng lỗi trong file log
+cat /var/log/syslog | grep "error" | sort | uniq
+```
 
 
