@@ -263,7 +263,7 @@ echo "I'm done if \$path is set."
   + Định nghĩa các hàm shell
   + Thay đổi Prompt (PS1)
   + Tự động thực thi lệnh khi shell khởi động
-# Thực thi điều kiện (Ra quyết định)\
+# Thực thi điều kiện (Ra quyết định)
 - In shell:
   + 0 là giá false.
   + 1 or non-zero là giá trị true.
@@ -503,12 +503,12 @@ tìm vivek trong /etc/passwd nếu có ( lệnh thành công Logic AND && ) in r
 grep "^vivek" /etc/passwd || echo "User vivek not found in /etc/passwd"
 tìm vivek trong /etc/passwd nếu có in thì ko in ra nếu ko có ( lệnh ko thành công Logic OR || ) mới in ra
 ```
-- logic not (!) là toán tử boolean
+- **logic not (!) là toán tử boolean**
 - Phủ định trạng thái của lệnh
 - Trong Bash, các lệnh thường trả về:
     + 0: Thành công (true).
     + Khác 0: Thất bại (false).
-    + ! sẽ đổi trạng thái:
+    + **! sẽ đổi trạng thái:**
     + Nếu lệnh trả về 0, ! sẽ làm cho nó thành false.
     + Nếu lệnh trả về khác 0, ! sẽ làm cho nó thành true.
 - sử dụng lệnh test bằng ngoặc
@@ -966,5 +966,269 @@ diff: So sánh hai tệp ảo này và in ra sự khác biệt.
 Tìm kiếm các dòng lỗi trong file log
 cat /var/log/syslog | grep "error" | sort | uniq
 ```
+# Chap 8 : Signals
+### Signals
+- Linux hỗ trợ cả tín hiệu đáng tin cậy POSIX ("tín hiệu chuẩn") và tín hiệu thời gian thực POSIX.
+- Tín hiệu được gửi đến một tiến trình hoặc lệnh để thông báo sự kiện đã xảy ra.
+- kiểm tra các tín hiệu được hỗ trợ trên hệ thống Linux bằng lệnh sau :
+```
+kill -l
+```
+### process
+- Linux là hệ điều hành đa người dùng (nhiều người dùng có thể đăng nhập vào Linux và chia sẻ tài nguyên của nó) và đa nhiệm.
+- Điều đó có nghĩa là bạn có thể chạy nhiều lệnh và thực hiện nhiều tác vụ cùng một lúc.
+- Trong Linux, khi bạn bắt đầu một quy trình, quy trình đó được cấp một số duy nhất gọi là PID hoặc process-id.
+- PID bắt đầu từ 0 đến 65535.
+- PID 1 luôn được gán cho quy trình init, đây là quy trình đầu tiên được bắt đầu khi khởi động
 
+- Tiến trình cha là tiến trình Linux đã tạo ra một hoặc nhiều tiến trình con.
+- Tiến trình có thể phân nhánh tiến trình con, tức là tạo một tiến trình con.
+- Hàm fork() : Hàm fork() tạo một bản sao của tiến trình hiện tại. Tiến trình cha tiếp tục chạy, và tiến trình con được tạo ra từ cùng một điểm gọi fork().
+	+ Trong tiến trình cha, fork() trả về PID của tiến trình con.
+ 	+ Trong tiến trình con, fork() trả về giá trị 0.
+```
+getpid(): Trả về PID của tiến trình hiện tại.
+getppid(): Trả về PID của tiến trình cha.
+```
 
+- Sau khi gọi fork(), cả tiến trình cha và con chạy song song.
+
+- Khi chương trình chạy, bạn có thể kiểm tra các tiến trình với lệnh:
+```
+ps -ef | grep <tên chương trình>
+```
+ **Tiến trình mồ côi và tiến trình zombie**
+- Tiến trình mồ côi (Orphan Process):
+- Nếu tiến trình cha thoát trước khi tiến trình con hoàn thành, tiến trình con sẽ trở thành mồ côi.
+
+- Hệ thống sẽ gán tiến trình con cho init (PID 1) làm cha mới.
+- Tiến trình zombie (Zombie Process):
+
+- Khi tiến trình con hoàn thành nhưng tiến trình cha chưa gọi wait() để thu dọn tài nguyên, tiến trình con sẽ chuyển thành zombie.
+- Trạng thái zombie giữ lại thông tin của tiến trình con trong bảng tiến trình.
+
+### Hệ thống xử lý tiến trình cơ bản
+- Mọi chương trình chạy trên Linux đều là một tiến trình.
+- Tiến trình có thể là:
+	+ Tiến trình hệ thống (daemon): Chạy nền để cung cấp dịch vụ như sshd, cron, nginx.
+	+ Tiến trình người dùng: Các ứng dụng do người dùng chạy như vim, bash.
+- Quản lý tiến trình cha - con
+- Khi một chương trình mới được chạy, Linux tạo một tiến trình con từ một tiến trình cha hiện có:
+
+- Tiến trình cha gọi fork() để tạo tiến trình con.
+- Tiến trình con sẽ thực hiện công việc được giao hoặc thay thế bằng chương trình khác thông qua exec().
+- Ví dụ thực tế:
+- Tiến trình init hoặc systemd (tiến trình đầu tiên trên hệ thống) là cha của hầu hết các tiến trình khác.
+### Quản lý tiến trình trên máy chủ Linux
+- a. Tiến trình nền (Daemon)
+- Các dịch vụ như web server (nginx), cơ sở dữ liệu (mysql), SSH (sshd) hoạt động trong nền dưới dạng tiến trình daemon.
+
+- Các daemon được quản lý bởi hệ thống systemd hoặc init.
+
+- Hoạt động thực tế:
+
+- Khi máy chủ khởi động, systemd khởi chạy các tiến trình nền cần thiết.
+- Mỗi dịch vụ chạy dưới dạng một tiến trình độc lập.
+- Các tiến trình nền này sinh thêm tiến trình con để xử lý các công việc cụ thể:
+- Ví dụ: nginx tạo tiến trình con để xử lý các yêu cầu HTTP từ khách hàng.
+**rạng thái tiến trình**
+- Tiến trình trong Linux có nhiều trạng thái, chẳng hạn:
+	+ Running: Tiến trình đang thực thi.
+ 	+ Sleeping: Tiến trình chờ tài nguyên hoặc sự kiện.
+	+ Stopped: Tiến trình bị dừng tạm thời.
+	+ Zombie: Tiến trình đã kết thúc nhưng chưa được dọn dẹp bởi cha.
+**Công cụ quản lý tiến trình trên Linux**
+- Hiển thị tất cả tiến trình với thông tin chi tiết.
+```
+ps aux
+ps
+ps aux | less
+ps aux | grep "process-name"
+ps aux | grep "httpd"
+ps alx | grep "mysqld"
+```
+- Theo dõi tiến trình và sử dụng tài nguyên (CPU, RAM) thời gian thực.
+```
+top hoặc htop
+```
+- Kiểm tra quan hệ cha - con của tiến trình
+```
+pstree
+```
+- Quản lý tiến trình
+```
+kill <PID>: Kết thúc một tiến trình cụ thể.
+nice / renice: Điều chỉnh độ ưu tiên của tiến trình.
+```
+
+**danh sách các tín hiệu thường dùng**
+```
+- SIGHUP (1)
+
+Ý nghĩa: Tín hiệu để yêu cầu tiến trình tái tải lại cấu hình hoặc khởi động lại. Thường được sử dụng cho các dịch vụ như web server.
+Ứng dụng: Khi thay đổi cấu hình của dịch vụ mà không muốn tắt dịch vụ, ví dụ: nginx, apache.
+
+SIGINT (2)
+
+Ý nghĩa: Tín hiệu ngắt, thường là khi người dùng nhấn Ctrl+C trong terminal, yêu cầu tiến trình dừng lại.
+Ứng dụng: Ngừng tiến trình đang chạy trong terminal.
+
+SIGQUIT (3)
+
+Ý nghĩa: Tín hiệu yêu cầu tiến trình dừng lại và tạo core dump (báo lỗi).
+Ứng dụng: Sử dụng trong các tình huống khi có lỗi nghiêm trọng và muốn tạo thông tin debug.
+
+SIGKILL (9)
+
+Ý nghĩa: Tín hiệu buộc tiến trình phải dừng ngay lập tức. Đây là tín hiệu mạnh nhất và không thể bị bắt hoặc bỏ qua.
+Ứng dụng: Khi tiến trình không phản hồi và cần phải dừng ngay lập tức mà không quan tâm đến trạng thái của nó.
+
+SIGTERM (15)
+
+Ý nghĩa: Tín hiệu yêu cầu tiến trình kết thúc một cách lịch sự. Đây là tín hiệu kết thúc mặc định mà không gây hại đến tiến trình.
+Ứng dụng: Dùng để yêu cầu tiến trình kết thúc bình thường, tránh mất dữ liệu hoặc không hoàn thành công việc.
+
+SIGCHLD (17)
+
+Ý nghĩa: Tín hiệu gửi từ tiến trình con đến tiến trình cha khi tiến trình con kết thúc hoặc thay đổi trạng thái.
+Ứng dụng: Tiến trình cha nhận tín hiệu này để biết khi nào tiến trình con của nó kết thúc và xử lý (ví dụ: giải phóng tài nguyên).
+
+SIGCONT (18)
+
+Ý nghĩa: Tín hiệu tiếp tục tiến trình đã bị tạm dừng.
+Ứng dụng: Tiến trình có thể bị tạm dừng bằng tín hiệu SIGSTOP và tiếp tục khi nhận SIGCONT.
+
+SIGSTOP (19)
+
+Ý nghĩa: Tín hiệu yêu cầu dừng tiến trình ngay lập tức và không thể bị bỏ qua.
+Ứng dụng: Dừng tiến trình mà không thể bị hủy bỏ.
+
+SIGTSTP (20)
+
+Ý nghĩa: Tín hiệu tạm dừng tiến trình (thường là khi nhấn Ctrl+Z trong terminal).
+Ứng dụng: Dừng tiến trình đang chạy trong terminal mà không kết thúc.
+
+SIGTTIN (21)
+
+Ý nghĩa: Tín hiệu gửi từ tiến trình con đến tiến trình cha khi tiến trình con yêu cầu đầu vào từ terminal.
+Ứng dụng: Khi tiến trình con yêu cầu quyền truy cập vào terminal để đọc dữ liệu.
+
+SIGTTOU (22)
+
+Ý nghĩa: Tín hiệu gửi từ tiến trình con đến tiến trình cha khi tiến trình con yêu cầu đầu ra từ terminal.
+Ứng dụng: Khi tiến trình con yêu cầu quyền truy cập vào terminal để ghi dữ liệu.
+
+SIGUSR1 (23)
+
+Ý nghĩa: Tín hiệu người dùng 1, có thể được sử dụng để thông báo hoặc yêu cầu một hành động tùy chỉnh.
+Ứng dụng: Các chương trình có thể sử dụng SIGUSR1 để thực hiện hành động tùy chỉnh, chẳng hạn như thay đổi chế độ hoạt động hoặc ghi log.
+
+SIGUSR2 (24)
+
+Ý nghĩa: Tín hiệu người dùng 2, tương tự như SIGUSR1, được dùng cho các mục đích tùy chỉnh.
+Ứng dụng: Dùng để thông báo hoặc yêu cầu một hành động đặc biệt từ tiến trình.
+
+SIGPWR (28)
+
+Ý nghĩa: Tín hiệu thông báo sự cố nguồn (power failure).
+Ứng dụng: Được gửi khi có sự cố về nguồn điện hoặc sự kiện mất điện bất ngờ.
+
+SIGSYS (29)
+
+Ý nghĩa: Tín hiệu khi một hệ thống gọi không hợp lệ xảy ra.
+Ứng dụng: Sử dụng khi một hệ thống gọi không hợp lệ hoặc không khả dụng.
+
+SIGALRM (44)
+
+Ý nghĩa: Tín hiệu báo hiệu hết thời gian (timeout).
+Ứng dụng: Dùng để đánh dấu khi một tác vụ hoặc lệnh đã hết thời gian thực thi, ví dụ trong các ứng dụng đồng bộ hoặc kiểm tra thời gian chờ.
+
+SIGSEGV (11)
+
+Ý nghĩa: Tín hiệu báo lỗi phân vùng bộ nhớ (segmentation fault), khi tiến trình cố gắng truy cập bộ nhớ không hợp lệ.
+Ứng dụng: Thường xảy ra khi một chương trình cố gắng đọc hoặc ghi vào vùng bộ nhớ mà nó không được phép truy cập.
+
+SIGBUS (10)
+
+Ý nghĩa: Tín hiệu báo lỗi bus (lỗi phần cứng hoặc bộ nhớ không hợp lệ).
+Ứng dụng: Được gửi khi hệ thống gặp lỗi phần cứng liên quan đến bộ nhớ hoặc bus.
+
+SIGPOLL (29)
+
+Ý nghĩa: Tín hiệu thông báo có sự kiện cần xử lý, tương tự SIGIO.
+Ứng dụng: Thường sử dụng trong các ứng dụng mạng hoặc ứng dụng I/O để thông báo có sự kiện hoặc dữ liệu cần xử lý.
+
+SIGRTMIN (95)
+
+Ý nghĩa: Tín hiệu thực tế (real-time signal) đầu tiên trong dãy tín hiệu thời gian thực.
+Ứng dụng: Được dùng cho các ứng dụng cần xử lý các tín hiệu theo thời gian thực.
+
+SIGRTMIN+N (96-127)
+
+Ý nghĩa: Các tín hiệu thực tế tiếp theo trong dãy tín hiệu thời gian thực, với các mục đích tùy chỉnh và ứng dụng.
+Ứng dụng: Sử dụng trong các ứng dụng yêu cầu xử lý tín hiệu thời gian thực, chẳng hạn như giao tiếp giữa các tiến trình.
+
+Các tín hiệu đặc biệt:
+SIGKILL (9) và SIGTERM (15) là hai tín hiệu quan trọng nhất để dừng một tiến trình, với SIGKILL là tín hiệu mạnh mẽ nhất và không thể bị từ chối.
+SIGHUP (1), SIGUSR1 (23) và SIGUSR2 (24) thường được sử dụng để thông báo và thực hiện các hành động tùy chỉnh trong các dịch vụ và ứng dụng.
+```
+- gửi tín hiệu :
+```
+kill -<số tín hiệu> <PID>
+```
+- Bạn cũng có thể xem danh sách tín hiệu bằng cách truy cập tệp /usr/include/linux/signal.h :
+```
+more /usr/include/linux/signal.h
+```
+- **trap**
+- lệnh trap trong Linux được sử dụng để xử lý các tín hiệu (signals) trong các shell script. Nó cho phép bạn chỉ định các hành động mà shell sẽ thực hiện khi nhận một tín hiệu nhất định, giúp bạn kiểm soát và xử lý các sự kiện bất ngờ hoặc các tín hiệu như SIGINT, SIGTERM, SIGKILL, v.v.
+```
+trap 'command' signal
+```
+- ví dụ :
+```
+#!/bin/bash
+# capture an interrupt # 0
+trap 'echo "Exit 0 signal detected..."' 0
+
+# display something
+echo "This is a test"
+
+# exit shell script with 0 signal
+exit 0
+```
+**subsshell**
+- Trong Linux và hệ điều hành Unix, subshell (tiến trình con) là một phiên bản con của shell, được tạo ra khi một lệnh hoặc một tập lệnh được thực thi trong một shell khác biệt. Subshell cho phép thực thi các lệnh mà không ảnh hưởng đến môi trường của shell cha (shell gốc).
+- tạo subshell Dùng dấu ngoặc đơn ( ... ): Khi bạn bao quanh một tập lệnh hoặc lệnh với dấu ngoặc đơn, shell sẽ tạo một subshell để thực thi lệnh đó.
+```
+(echo "This is a subshell"; ls)
+```
+- Các đặc điểm của subshell
+  	+ Tách biệt môi trường
+  	+ Các lệnh trong subshell độc lập
+  	+ Subshell là một tiến trình con thực sự, vì vậy nó có thể tạo ra các tín hiệu hoặc thay đổi các thông tin của tiến trình (ví dụ: thông qua kill, wait, v.v.).
+- ví dụ :
+```
+( cd /tmp && echo "Current directory is $(pwd)" )
+echo "Current directory is $(pwd)"
+
+Lệnh cd vào thư mục /tmp và echo sẽ chạy trong subshell.
+Môi trường trong subshell thay đổi nhưng không ảnh hưởng đến shell cha. Sau khi subshell kết thúc, shell cha vẫn ở trong thư mục ban đầu.
+```
+**Compound command - lệnh hợp thành**
+- là một cách để kết hợp nhiều lệnh lại với nhau để thực thi chúng trong một cách có tổ chức
+- Dùng dấu chấm phẩy ;
+- Các lệnh này sẽ được thực thi theo thứ tự, bất kể lệnh trước có thành công hay không.
+```
+command1; command2; command3
+echo "Hello"; echo "World"; ls
+```
+**exec**
+- Trong Linux và Unix, exec là một lệnh trong shell có tác dụng thay thế tiến trình hiện tại bằng một tiến trình mới.
+- Khi exec được sử dụng, tiến trình hiện tại (chạy lệnh exec) sẽ bị thay thế hoàn toàn bằng tiến trình mới, và tiến trình này sẽ chạy trong cùng một không gian bộ nhớ và PID như tiến trình gốc.
+- Điều này có nghĩa là khi exec được gọi, các lệnh hoặc chương trình mới sẽ được thực thi mà không tạo ra một tiến trình con.
+
+- cú pháp :
+```
+exec <command> [arguments...]
+```
