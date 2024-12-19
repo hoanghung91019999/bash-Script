@@ -1232,3 +1232,123 @@ echo "Hello"; echo "World"; ls
 ```
 exec <command> [arguments...]
 ```
+# function
+- Trong Bash Script, function (hàm) là một cách để tổ chức mã thành các khối logic dễ quản lý, giúp tăng khả năng tái sử dụng và cải thiện tính rõ ràng của kịch bản.
+- Function trong Bash là một khối mã được đặt tên, có thể được gọi ở bất kỳ đâu trong script.
+- Function có thể nhận tham số và trả về giá trị thông qua các biến đặc biệt hoặc return.
+- cú pháp :
+```
+function_name() {
+    # Mã lệnh thực thi
+}
+# Hoặc
+function function_name {
+    # Mã lệnh thực thi
+}
+```
+- Để gọi một function, chỉ cần gọi tên của nó:
+```
+function_name
+```
+- ví dụ :
+```
+greet() {
+    echo "Hello, $1!"
+}
+
+greet "World"  # Output: Hello, World!
+```
+- Function trong Bash trả về một giá trị exit code (0-255) bằng lệnh return.
+- Giá trị phức tạp hơn có thể được trả về qua echo hoặc biến toàn cục.
+**Biến Toàn Cục**
+- Biến toàn cục là biến có thể được truy cập và thay đổi từ bất kỳ đâu trong script, kể cả bên trong và ngoài các function.
+- Tất cả các biến được khai báo trong Bash mặc định là toàn cục.
+
+**Biến Cục Bộ (Local Variables)**
+- Biến cục bộ chỉ có hiệu lực bên trong function mà nó được khai báo.
+- Để khai báo biến cục bộ trong Bash, sử dụng từ khóa local.
+**khi nào nên sử dụng function**
+- Khi Có Công Việc Lặp Lại
+- Khi Cần Tái Sử Dụng Logic
+- Khi Cần Tổ Chức Code Rõ Ràng
+- Khi Cần Xử Lý Input
+- Khi Muốn Đơn Giản Hóa Thao Tác Với Tệp
+- Khi Cần Tăng Tính Linh Hoạt
+- Khi Muốn Xử Lý Lỗi và Debug
+- Khi Tự Động Hóa Tác Vụ Hằng Ngày
+**ví dụ về việc sử dụng hàm và không sử dụng hàm**
+- không sử dụng hàm
+```
+#!/bin/bash
+
+# Kiểm tra file đầu tiên
+if [[ -f "/path/to/file1" ]]; then
+    echo "File1 exists."
+else
+    echo "File1 does not exist."
+fi
+
+# Kiểm tra file thứ hai
+if [[ -f "/path/to/file2" ]]; then
+    echo "File2 exists."
+else
+    echo "File2 does not exist."
+fi
+```
+- sử dụng hàm
+```
+#!/bin/bash
+
+check_file() {
+    if [[ -f "$1" ]]; then
+        echo "File $1 exists."
+    else
+        echo "File $1 does not exist."
+    fi
+}
+
+check_file "/path/to/file1"
+check_file "/path/to/file2"
+```
+- tổ chức mã tốt hơn
+```
+#!/bin/bash
+
+echo "Updating system..."
+sudo apt update && sudo apt upgrade -y
+
+echo "Installing git..."
+sudo apt install -y git
+
+echo "Installing curl..."
+sudo apt install -y curl
+
+echo "Cleanup..."
+rm -rf /tmp/*
+```
+- dùng hàm
+```
+#!/bin/bash
+
+update_system() {
+    echo "Updating system..."
+    sudo apt update && sudo apt upgrade -y
+}
+
+install_package() {
+    local package=$1
+    echo "Installing $package..."
+    sudo apt install -y "$package"
+}
+
+cleanup_temp() {
+    echo "Cleanup..."
+    rm -rf /tmp/*
+}
+
+update_system
+install_package "git"
+install_package "curl"
+cleanup_temp
+```
+
